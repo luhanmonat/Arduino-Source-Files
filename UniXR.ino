@@ -27,7 +27,7 @@ enum  abits {Y1,Y2,Y3,LED,RPWR,RDAT,XDAT,XPWR};
 #define BUFSIZE 40
 
 byte  Buffer[BUFSIZE],bufpnt;
-word  xcode,rcode;
+word  xcode,rcode,lastcode;
 byte  okcodes,cmd,val;
 byte  END;
 word  clocker;
@@ -68,10 +68,10 @@ ser:
               Printx("T,RF433 X/R\r",0); Wait(200);
               Printx("B,1,XMIT,CODE,,,,,,,,,,\r",0);
               break;
-    case 'A': if(!val) {
-                XmitCode(xcode);
-                Flash(2);
-              } break;
+    case 'A': if(val) break;
+    case '#': XmitCode(xcode);
+              Flash(2);
+              break;
     case 'B': xcode=HexPad();
               Printx("D1,Xmit:%04X\r",xcode);
               goto replot;
@@ -82,14 +82,17 @@ ser:
 recv:
   rcode=GetCode();
   if(rcode) {
-    ++okcodes;
-  } else {
+    if(rcode==lastcode)
+      ++okcodes;
+    else
     okcodes=0;
+    lastcode=rcode;
+    Printx("D3,Recv:%04X\r",rcode);
+    Wait(50);
+    Printx("D4,Count=%d\r",okcodes);
   }
-  Printx("D3,Recv:%04X\r",rcode);
-  Wait(50);
-  Printx("D4,Count=%d\r",okcodes);
   Flash(1);
+  
   goto cycle;
   
 }
