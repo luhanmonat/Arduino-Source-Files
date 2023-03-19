@@ -1,0 +1,71 @@
+/*
+ * Personal Code Transponder for ATtiny85
+ * 4/22 Luhan Monat
+ * 
+ * 
+ * Set bootloader options for 8 Mhz internal clock
+ * 
+ * Protocol: 5ms Attenstion, 2.5ms gap
+ * Each bit: 0-750usec, 1-1500usec, 750usec gap
+ */
+
+#define VIBIN     1         // Vibration sensor (normally open contacts)
+#define XMIT      2         // 433 Mhz transmitter draws power ONLY when active
+#define DLCODE    0xA799    // (unused code)
+
+// We are using 'main' instead of 'setup & loop'
+
+int	main() {
+int i,j;
+
+DDRB  = 0b111101;     // PB1 is input
+bitSet(PORTB,1);      // PB1 enable pullup
+
+again: 
+  
+  for(j=0;j<25;j++) {
+    RFAttn();           // long pulse needed for most RF reciever units
+    RFXmit((DLCODE>>8)&0xff);       // pick a number - any number
+    Wait(1);
+    RFXmit(DLCODE&0xff);
+    Wait(1000);      // set clock to normal
+  }
+
+  goto again;
+}
+
+
+//  You can replace these 2 routines with whatever coding
+//  scheme you want to use.
+
+void  RFAttn() {
+  bitSet(PORTB,XMIT);
+  delayMicroseconds(5000);
+  bitClear(PORTB,XMIT);
+  delayMicroseconds(2500);
+}
+
+void  RFXmit(byte dat) {
+byte  i,mask;
+  
+  mask=0x80;
+  for(i=0;i<8;i++) {
+    bitSet(PORTB,XMIT);
+    if(dat&mask) delayMicroseconds(1500);
+    else         delayMicroseconds(750);
+    bitClear(PORTB,XMIT);
+    delayMicroseconds(750); 
+    mask>>=1;
+  }
+}
+
+
+
+//  In place of delay instruction (needed when using 'main')
+
+void  Wait(word ms) {
+word  i;
+
+  for(i=0;i<ms;i++)
+    delayMicroseconds(1000);
+}
