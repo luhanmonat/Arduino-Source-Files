@@ -3,9 +3,16 @@
  *  4/24 Luhan Monat
  *  Util85D [Attiny85,8mhz]
  *  
+ *  Uses SB312 PIR sensor module
+ *  Sleep until next detection (15 microamps)
+ *  
  */
 
+// define all the bits the easy way
+
 enum  {DET,Q1,Q2,LED,X4};
+
+// Use MAIN like a real C program
 
 int	main() {
 
@@ -13,17 +20,17 @@ int	main() {
 
 cycle:
 
-  if(bitRead(PINB,DET))         // only use rising edge
-    Flash(10);
-  else
-    goto cycle;
-  Wait(9000);
-  Sleeper();
+  if(bitRead(PINB,DET)) {      // only use rising edge
+    Flash(10);                 // for the flash
+    Wait(9000);                // let voltage settle on PIR
+  }
+  Sleeper();                `  // back to sleep
   goto cycle;
   
 
 }
 
+// Flash the LED
 
 void Flash(byte msecs) {
 
@@ -33,6 +40,8 @@ void Flash(byte msecs) {
   Wait(200);
 }
 
+// ATtiny85 sleep function
+// Wake on pin change connected to PIR senso
 
 void  Sleeper() {
 
